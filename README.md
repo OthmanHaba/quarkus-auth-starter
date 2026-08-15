@@ -82,15 +82,54 @@ configuration, security decisions, and client examples.
 
 ## Run locally
 
-Requirements are JDK 21 and Docker.
+Requirements are JDK 21 and either Docker or an existing PostgreSQL server.
+
+With Docker, `compose.yaml` creates the role and database for you:
 
 ```bash
 docker compose up -d
 ./gradlew quarkusDev
 ```
 
+Against a PostgreSQL server you already run, create the role and database once:
+
+```bash
+./gradlew dbCreate
+./gradlew quarkusDev
+```
+
 The API runs at `http://localhost:8080`. The default trusted development frontend
 origin is `http://localhost:3000`.
+
+## Database tasks
+
+| Task | Does |
+| --- | --- |
+| `./gradlew dbCreate` | Creates the development role and database if missing. Idempotent. |
+| `./gradlew flywayMigrate` | Applies pending migrations without starting the application. |
+| `./gradlew flywayInfo` | Prints which migrations are applied and pending. |
+| `./gradlew flywayValidate` | Fails if an applied migration's checksum changed. |
+| `./gradlew flywayRepair` | Fixes the schema history after a failed or edited migration. |
+| `./gradlew flywayClean -PallowClean` | Drops every object in the schema. |
+
+`flywayClean` is disabled unless `-PallowClean` is passed, because it destroys
+the schema and the default Flyway behaviour is easy to run by accident.
+
+The application also migrates on boot (`quarkus.flyway.migrate-at-start=true`),
+so these tasks are for the cases that boot cannot cover: migrating in CI before
+a deploy, inspecting state, and repairing history. The Flyway Gradle plugin is
+pinned to the same `flyway-core` version Quarkus ships, so both write compatible
+schema history.
+
+Connection settings are read from `%dev.quarkus.datasource.*` in
+`application.properties` — there is no second copy in `build.gradle.kts`. Override
+per environment with `DB_URL`, `DB_USERNAME` and `DB_PASSWORD`. `dbCreate`
+additionally connects as a superuser to create the role, defaulting to `postgres`
+with no password; override with `DB_ADMIN_USERNAME` and `DB_ADMIN_PASSWORD`.
+
+```bash
+DB_ADMIN_USERNAME=postgres DB_ADMIN_PASSWORD=secret ./gradlew dbCreate
+```
 
 ## API documentation
 
