@@ -127,8 +127,18 @@ sessions:read
 sessions:revoke
 ```
 
-The wildcard ability `*` grants every token ability. Session-authenticated requests
-pass token-ability checks but still pass through application Gates.
+The wildcard ability `*` satisfies every **token ability** check — both the
+`@TokenAbilities` / `@TokenAbilityAny` interceptors and Quarkus
+`@PermissionsAllowed`. It is matched dynamically in `PersonalAccessToken.can()`,
+so it also covers abilities you add later without reissuing tokens.
+
+`*` does **not** grant `@Gate(...)`. Gates authorize on the user's application
+role, not on the credential, so a `*` token acting for a `CUSTOMER` is still
+denied `@Gate(Ability.MANAGE_USERS)`. That split is the point: a wildcard token
+says "this credential is unrestricted", never "this user is an admin".
+
+Session-authenticated requests pass every token-ability check (there is no token
+to scope) but still pass through application Gates.
 
 ## Extending Gate
 

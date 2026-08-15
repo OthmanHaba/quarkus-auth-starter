@@ -129,6 +129,10 @@ class TokenAuthTest {
         given().auth().oauth2(wildcardToken)
             .`when`().get("/api/auth/tokens")
             .then().statusCode(200)
+        // Wildcard must also satisfy Quarkus @PermissionsAllowed, not just @TokenAbilities.
+        given().auth().oauth2(wildcardToken)
+            .`when`().get("/api/auth/sessions")
+            .then().statusCode(200)
     }
 
     @Test
