@@ -92,6 +92,30 @@ docker compose up -d
 The API runs at `http://localhost:8080`. The default trusted development frontend
 origin is `http://localhost:3000`.
 
+## API documentation
+
+[Scalar](https://scalar.com) renders the generated OpenAPI document at
+**http://localhost:8080/api-docs**, with the raw document at `/q/openapi`.
+
+Both are **absent from a production build**, not merely blocked. `ApiDocsResource`
+carries `@UnlessBuildProfile("prod")` so the bean is never created, and
+`%prod.quarkus.smallrye-openapi.enable=false` switches off the document itself —
+a `prod` jar returns `404` for `/api-docs`, `/q/openapi` and `/q/swagger-ui`.
+
+Both authentication mechanisms are declared in `OpenApiConfiguration`, so the
+reference documents how to authenticate rather than just listing paths:
+
+| Scheme | Type | Used by |
+| --- | --- | --- |
+| `personalToken` | HTTP bearer | `Authorization: Bearer <token-id>\|<secret>` |
+| `sessionCookie` | API key in cookie | `app_session`, plus `X-XSRF-TOKEN` on mutations |
+
+Retitle without touching Kotlin via `quarkus.smallrye-openapi.info-*` in
+`application.properties`.
+
+Scalar's bundle loads from a CDN, so the page needs network access on first
+paint. The API itself never calls out.
+
 ## Auth API
 
 ```text
